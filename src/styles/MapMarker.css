@@ -1,0 +1,39 @@
+/* Google Maps style User Location Dot */
+.user-location-marker {
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-location-pulse {
+    width: 40px;
+    height: 40px;
+    background: rgba(66, 133, 244, 0.4);
+    border-radius: 50%;
+    position: absolute;
+    animation: pulse 1.5s infinite ease-out;
+}
+
+.user-location-dot {
+    width: 16px;
+    height: 16px;
+    background-color: #4285F4;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}

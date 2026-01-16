@@ -1,0 +1,43 @@
+:root {
+  /* Brand Colors */
+  --primary: #00e676; /* Electric Green */
+  --primary-hover: #00c853;
+  --scondary: #2979ff; /* Electric Blue/Purple */
+  
+  /* Backgrounds */
+  --bg-main: #0a0e17; /* Very Dark Blue/Black */
+  --bg-card: #151b2b; /* Slightly lighter */
+  --bg-input: #1e263a;
+  
+  /* Text */
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+  --text-accent: #00e676;
+  
+  /* Status */
+  --status-available: #00e676;
+  --status-busy: #ff3d00;
+  --status-maintenance: #ffb700;
+  
+  /* Layout */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  
+  /* Animation */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  
+  /* Shadows */
+  --glow-primary: 0 0 20px rgba(0, 230, 118, 0.3);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+.light-mode {
+  /* Override for light mode if needed, but going for dark mode first as per "Premium" request */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --bg-input: #e2e8f0;
+}

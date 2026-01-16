@@ -1,0 +1,118 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.modal-header h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.modal-subtitle {
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.reservation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.modal-actions button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.modal-actions .btn-secondary {
+    background: #fff;
+    border: 1px solid #333;
+    color: #333;
+}
+
+.modal-actions .btn-secondary:hover {
+    background: #f0f0f0;
+}
+
+.modal-actions .btn-primary {
+    background: #fff;
+    border: 1px solid #333;
+    color: #333;
+    /* Style match to user image which shows white buttons with borders? Or assume standard primary? Using standard primary filled for now or outlines? */
+    /* Let's stick closer to the image which looks like white buttons with black text/border */
+}
+
+/* Specific update based on image: The Confirm button is white with border in image, but let's make it look active */
+.modal-actions .btn-primary {
+    background: #fff;
+    /* Image shows white bg */
+    border: 1px solid #000;
+    color: #000;
+}
+
+.modal-actions .btn-primary:hover {
+    background: #f0f0f0;
+}

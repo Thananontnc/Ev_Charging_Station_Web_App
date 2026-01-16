@@ -1,0 +1,45 @@
+.navbar {
+    background: rgba(10, 14, 23, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 16px 0;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.nav-link {
+    color: var(--text-muted);
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.nav-auth {
+    display: flex;
+    gap: 16px;
+}
