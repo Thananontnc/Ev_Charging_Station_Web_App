@@ -28,6 +28,12 @@ const Navbar = () => {
 
                 <div className="nav-links">
                     <Link to={user ? "/user/search" : "/login"} className="nav-link">Search Map</Link>
+                    {user && user.role === 'admin' && (
+                        <>
+                            <Link to="/operator" className="nav-link">Station Operator</Link>
+                            <Link to="/admin" className="nav-link">System Admin</Link>
+                        </>
+                    )}
 
                     <div className="nav-auth">
                         {user ? (

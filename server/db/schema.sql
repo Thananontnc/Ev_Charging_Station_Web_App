@@ -41,6 +41,8 @@ CREATE TABLE charging_stations (
     price_per_kwh DECIMAL(10, 2) DEFAULT 0.00,
     status VARCHAR(20) DEFAULT 'Available',
     description TEXT,
+    operating_hours VARCHAR(100) DEFAULT '24/7',
+    average_wait_time INTEGER DEFAULT 0,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

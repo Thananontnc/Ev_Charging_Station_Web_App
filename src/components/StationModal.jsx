@@ -10,6 +10,7 @@ const StationModal = ({ station, onClose, onSave }) => {
         connector_type: 'CCS2',
         charging_watt: 120,
         total_slots: 2,
+        average_wait_time: 0,
         price_per_kwh: 7.0,
         operating_hours: '24/7',
         status: 'Available'
@@ -112,10 +113,20 @@ const StationModal = ({ station, onClose, onSave }) => {
                                 />
                             </div>
                             <div className="form-group">
+                                <label>Average Wait Time (min)</label>
+                                <input
+                                    type="number"
+                                    value={formData.average_wait_time}
+                                    onChange={(e) => setFormData({ ...formData, average_wait_time: parseInt(e.target.value) })}
+                                />
+                            </div>
+                        </div>
+                        <div className="form-row">
+                            <div className="form-group">
                                 <label>Operating Hours</label>
                                 <input
                                     type="text"
-                                    value={formData.operating_hours}
+                                    value={formData.operating_hours || '24/7'}
                                     onChange={(e) => setFormData({ ...formData, operating_hours: e.target.value })}
                                     placeholder="e.g. 24/7 or 6am - 11pm"
                                 />

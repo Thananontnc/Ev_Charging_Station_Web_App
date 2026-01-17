@@ -317,13 +317,13 @@ app.get('/api/admin/stats', async (req, res) => {
         if (!adminId) return res.status(400).json({ success: false, error: 'Admin ID required' });
 
         // 1. Total Reservations for this admin's stations
-        const resCount = await pool.query('SELECT COUNT(*) FROM reservations WHERE admin_id = $1', [adminId]);
+        const resCount = await pool.query('SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1', [adminId]);
 
         // 2. Pending Approvals
-        const pendingCount = await pool.query("SELECT COUNT(*) FROM reservations WHERE admin_id = $1 AND status = 'Pending'", [adminId]);
+        const pendingCount = await pool.query("SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status = 'Pending'", [adminId]);
 
         // 3. Total Revenue
-        const revenue = await pool.query('SELECT SUM(total_price) FROM reservations WHERE admin_id = $1 AND status != $2', [adminId, 'Cancelled']);
+        const revenue = await pool.query('SELECT SUM(r.total_price) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status != $2', [adminId, 'Cancelled']);
 
         // 4. Active Stations (Available or Busy, but managed by admin)
         const stationCount = await pool.query("SELECT COUNT(*) FROM charging_stations WHERE admin_id = $1 AND status != 'Maintenance'", [adminId]);
@@ -363,7 +363,7 @@ app.get('/api/admin/reservations', async (req, res) => {
             FROM reservations r
             JOIN customers c ON r.customer_id = c.customer_id
             JOIN charging_stations cs ON r.station_id = cs.station_id
-            WHERE r.admin_id = $1
+            WHERE cs.admin_id = $1
         `;
         const queryParams = [adminId];
 
@@ -458,14 +458,14 @@ app.get('/api/operator/stations', async (req, res) => {
 // CREATE New Station
 app.post('/api/operator/stations', async (req, res) => {
     try {
-        const { admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours } = req.body;
+        const { admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours, average_wait_time } = req.body;
 
         const result = await pool.query(`
             INSERT INTO charging_stations 
-            (admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, available_slots, price_per_kwh, status, description, operating_hours)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $10, $11)
+            (admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, available_slots, price_per_kwh, status, description, operating_hours, average_wait_time)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $10, $11, $12)
             RETURNING *
-        `, [admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours]);
+        `, [admin_id, station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours, average_wait_time || 0]);
 
         res.status(201).json({ success: true, data: result.rows[0] });
     } catch (error) {
@@ -476,16 +476,16 @@ app.post('/api/operator/stations', async (req, res) => {
 // UPDATE Station Info
 app.put('/api/operator/stations/:id', async (req, res) => {
     try {
-        const { station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours } = req.body;
+        const { station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours, average_wait_time } = req.body;
 
         const result = await pool.query(`
             UPDATE charging_stations 
             SET station_name = $1, latitude = $2, longitude = $3, connector_type = $4, charging_watt = $5, 
                 total_slots = $6, available_slots = LEAST(available_slots, $6), price_per_kwh = $7, 
-                status = $8, description = $9, operating_hours = $10
-            WHERE station_id = $11
+                status = $8, description = $9, operating_hours = $10, average_wait_time = $11
+            WHERE station_id = $12
             RETURNING *
-        `, [station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours, req.params.id]);
+        `, [station_name, latitude, longitude, connector_type, charging_watt, total_slots, price_per_kwh, status, description, operating_hours, average_wait_time, req.params.id]);
 
         if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Station not found' });
         res.json({ success: true, data: result.rows[0] });

@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import UserDashboard from './pages/UserDashboard';
 import StationDashboard from './pages/StationDashboard';
+import OperatorPortal from './pages/OperatorPortal';
 import AdminDashboard from './pages/AdminDashboard';
 import Navbar from './components/Navbar';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/user/*" element={<UserDashboard />} />
           <Route path="/station/*" element={<StationDashboard />} />
           <Route path="/admin/*" element={<AdminDashboard />} />
+          <Route path="/operator/*" element={<OperatorPortal />} />
         </Routes>
       </main>
     </div>
