@@ -68,7 +68,7 @@ const OperatorPortal = () => {
             setStats({
                 totalRevenue: data.data.totalRevenue,
                 totalBookings: data.data.totalReservations,
-                dailyRevenue: (data.data.totalRevenue / 30).toFixed(2), // Rough estimate
+                dailyRevenue: data.data.dailyRevenue,
                 activeStations: data.data.activeStations
             });
         }

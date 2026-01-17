@@ -82,15 +82,15 @@ const UserDashboard = () => {
             nearestDist = Math.min(...distances).toFixed(1) + ' km';
         }
 
-        // 3. Avg Wait Time (Mock logic: based on slot occupancy)
-        const totalSlots = stationsList.reduce((acc, st) => acc + (st.total_slots || 0), 0);
-        const occupancy = totalSlots > 0 ? (totalSlots - totalAvailable) / totalSlots : 0;
-        const waitTime = Math.round(occupancy * 45) + ' min'; // Max 45 min wait
+        // 3. Avg Wait Time (Use data from database)
+        const avgWait = stationsList.length > 0
+            ? Math.round(stationsList.reduce((acc, st) => acc + (st.average_wait_time || 0), 0) / stationsList.length)
+            : 0;
 
         setStats({
             nearest: nearestDist,
             available: totalAvailable,
-            waitTime: waitTime
+            waitTime: avgWait + ' min'
         });
     };
 

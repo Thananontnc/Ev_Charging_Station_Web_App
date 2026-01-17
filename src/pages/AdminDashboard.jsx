@@ -24,6 +24,7 @@ const AdminDashboard = () => {
         totalReservations: 0,
         pendingApprovals: 0,
         totalRevenue: "0.00",
+        dailyRevenue: "0.00",
         activeStations: 0
     });
 
@@ -50,12 +51,13 @@ const AdminDashboard = () => {
 
     const fetchAllData = async (adminId) => {
         setLoading(true);
+        const viewId = 'all'; // Change to adminId if you want to restrict back to owner-only
         try {
             await Promise.all([
-                fetchStats(adminId),
-                fetchReservations(adminId),
-                fetchPayments(adminId),
-                fetchMyStations(adminId)
+                fetchStats(viewId),
+                fetchReservations(viewId),
+                fetchPayments(viewId),
+                fetchMyStations(viewId)
             ]);
         } catch (err) {
             console.error("Error fetching admin data:", err);
@@ -88,9 +90,28 @@ const AdminDashboard = () => {
         if (data.success) setMyStations(data.data);
     };
 
+    const handleUpdateStatus = async (id, newStatus) => {
+        if (!window.confirm(`Are you sure you want to mark this reservation as ${newStatus}?`)) return;
+        try {
+            const res = await fetch(`http://localhost:5001/api/admin/reservations/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                fetchAllData('all');
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    };
+
     // Auto-refresh reservations when filters change
     useEffect(() => {
-        if (admin) fetchReservations(admin.id);
+        if (admin) fetchReservations('all');
     }, [resFilterStatus, resFilterStation]);
 
     if (!admin) return null;
@@ -116,12 +137,17 @@ const AdminDashboard = () => {
                     <div className="card" style={{ padding: '24px' }}>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Total Revenue</div>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: '#00e676' }}>US${stats.totalRevenue}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Month to date</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Accrued total</div>
+                    </div>
+                    <div className="card" style={{ padding: '24px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Daily Revenue</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--secondary)' }}>US${stats.dailyRevenue}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Last 24 hours</div>
                     </div>
                     <div className="card" style={{ padding: '24px' }}>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Active Stations</div>
                         <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary)' }}>{stats.activeStations}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Current active stations</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Live units</div>
                     </div>
                 </div>
             </section>
@@ -173,6 +199,7 @@ const AdminDashboard = () => {
                                 <th style={{ padding: '16px' }}>Total</th>
                                 <th style={{ padding: '16px' }}>Status</th>
                                 <th style={{ padding: '16px' }}>Slot</th>
+                                <th style={{ padding: '16px' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -188,6 +215,32 @@ const AdminDashboard = () => {
                                         <span className={`badge ${res.status.toLowerCase()}`}>{res.status}</span>
                                     </td>
                                     <td style={{ padding: '16px' }}>#{res.slot}</td>
+                                    <td style={{ padding: '16px' }}>
+                                        {res.status === 'Pending' && (
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
+                                                    style={{ padding: '4px 8px', borderRadius: '4px', background: '#00e676', color: '#000', fontSize: '0.75rem', fontWeight: '600', border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
+                                                    style={{ padding: '4px 8px', borderRadius: '4px', background: '#ff5252', color: '#fff', fontSize: '0.75rem', fontWeight: '600', border: 'none', cursor: 'pointer' }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        )}
+                                        {res.status === 'Confirmed' && (
+                                            <button
+                                                onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
+                                                style={{ padding: '4px 8px', borderRadius: '4px', background: 'transparent', color: '#ff5252', fontSize: '0.75rem', border: '1px solid #ff5252', cursor: 'pointer' }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -244,7 +297,7 @@ const AdminDashboard = () => {
                 <PaymentDetailModal
                     paymentId={selectedPaymentId}
                     onClose={() => setSelectedPaymentId(null)}
-                    onRefresh={() => fetchAllData(admin.id)}
+                    onRefresh={() => fetchAllData('all')}
                 />
             )}
         </div>

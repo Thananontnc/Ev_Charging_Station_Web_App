@@ -316,17 +316,26 @@ app.get('/api/admin/stats', async (req, res) => {
         const { adminId } = req.query;
         if (!adminId) return res.status(400).json({ success: false, error: 'Admin ID required' });
 
-        // 1. Total Reservations for this admin's stations
-        const resCount = await pool.query('SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1', [adminId]);
+        let resCount, pendingCount, revenue, dailyRevenue, stationCount;
 
-        // 2. Pending Approvals
-        const pendingCount = await pool.query("SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status = 'Pending'", [adminId]);
-
-        // 3. Total Revenue
-        const revenue = await pool.query('SELECT SUM(r.total_price) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status != $2', [adminId, 'Cancelled']);
-
-        // 4. Active Stations (Available or Busy, but managed by admin)
-        const stationCount = await pool.query("SELECT COUNT(*) FROM charging_stations WHERE admin_id = $1 AND status != 'Maintenance'", [adminId]);
+        if (adminId === 'all') {
+            resCount = await pool.query('SELECT COUNT(*) FROM reservations');
+            pendingCount = await pool.query("SELECT COUNT(*) FROM reservations WHERE status = 'Pending'");
+            revenue = await pool.query("SELECT SUM(total_price) FROM reservations WHERE status != 'Cancelled'");
+            dailyRevenue = await pool.query("SELECT SUM(total_price) FROM reservations WHERE status != 'Cancelled' AND start_time >= NOW() - INTERVAL '1 day'");
+            stationCount = await pool.query("SELECT COUNT(*) FROM charging_stations WHERE status != 'Maintenance'");
+        } else {
+            resCount = await pool.query('SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1', [adminId]);
+            pendingCount = await pool.query("SELECT COUNT(*) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status = 'Pending'", [adminId]);
+            revenue = await pool.query('SELECT SUM(r.total_price) FROM reservations r JOIN charging_stations cs ON r.station_id = cs.station_id WHERE cs.admin_id = $1 AND r.status != $2', [adminId, 'Cancelled']);
+            dailyRevenue = await pool.query(`
+                SELECT SUM(r.total_price) 
+                FROM reservations r 
+                JOIN charging_stations cs ON r.station_id = cs.station_id 
+                WHERE cs.admin_id = $1 AND r.status != $2 AND r.start_time >= NOW() - INTERVAL '1 day'
+            `, [adminId, 'Cancelled']);
+            stationCount = await pool.query("SELECT COUNT(*) FROM charging_stations WHERE admin_id = $1 AND status != 'Maintenance'", [adminId]);
+        }
 
         res.json({
             success: true,
@@ -334,6 +343,7 @@ app.get('/api/admin/stats', async (req, res) => {
                 totalReservations: parseInt(resCount.rows[0].count),
                 pendingApprovals: parseInt(pendingCount.rows[0].count),
                 totalRevenue: parseFloat(revenue.rows[0].sum || 0).toFixed(2),
+                dailyRevenue: parseFloat(dailyRevenue.rows[0].sum || 0).toFixed(2),
                 activeStations: parseInt(stationCount.rows[0].count)
             }
         });
@@ -363,9 +373,14 @@ app.get('/api/admin/reservations', async (req, res) => {
             FROM reservations r
             JOIN customers c ON r.customer_id = c.customer_id
             JOIN charging_stations cs ON r.station_id = cs.station_id
-            WHERE cs.admin_id = $1
         `;
-        const queryParams = [adminId];
+        const queryParams = [];
+        if (adminId !== 'all') {
+            queryText += ` WHERE cs.admin_id = $1`;
+            queryParams.push(adminId);
+        } else {
+            queryText += ` WHERE 1=1`;
+        }
 
         if (status && status !== 'All statuses') {
             queryParams.push(status);
@@ -393,7 +408,7 @@ app.get('/api/admin/payments', async (req, res) => {
         const { adminId } = req.query;
         if (!adminId) return res.status(400).json({ success: false, error: 'Admin ID required' });
 
-        const result = await pool.query(`
+        let queryText = `
             SELECT 
                 p.payment_id as id,
                 p.reservation_id as "reservationId",
@@ -403,9 +418,17 @@ app.get('/api/admin/payments', async (req, res) => {
                 TO_CHAR(p.payment_date, 'Mon DD, YYYY HH:MI AM') as "createdAt"
             FROM payments p
             JOIN reservations r ON p.reservation_id = r.reservation_id
-            WHERE r.admin_id = $1
-            ORDER BY p.payment_date DESC
-        `, [adminId]);
+            JOIN charging_stations cs ON r.station_id = cs.station_id
+        `;
+        const queryParams = [];
+
+        if (adminId !== 'all') {
+            queryText += ` WHERE cs.admin_id = $1`;
+            queryParams.push(adminId);
+        }
+
+        queryText += ` ORDER BY p.payment_date DESC`;
+        const result = await pool.query(queryText, queryParams);
 
         res.json({ success: true, data: result.rows });
     } catch (error) {
@@ -571,8 +594,64 @@ app.post('/api/admin/payments/:id/refund', async (req, res) => {
     }
 });
 
-// GET Admin's Stations (for filters) ... (kept)
+// ADMIN: Update reservation status (Confirm/Cancel)
+app.put('/api/admin/reservations/:id/status', async (req, res) => {
+    const { status } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
+        // 1. Get current reservation status and station
+        const resvResult = await client.query('SELECT station_id, status FROM reservations WHERE reservation_id = $1 FOR UPDATE', [req.params.id]);
+        if (resvResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Reservation not found' });
+
+        const oldStatus = resvResult.rows[0].status;
+        const stationId = resvResult.rows[0].station_id;
+
+        // 2. Update status
+        await client.query('UPDATE reservations SET status = $1 WHERE reservation_id = $2', [status, req.params.id]);
+
+        // 3. Logic for slots if cancelling
+        if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
+            await client.query(`
+                UPDATE charging_stations 
+                SET available_slots = LEAST(total_slots, available_slots + 1),
+                    status = 'Available'
+                WHERE station_id = $1
+            `, [stationId]);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: `Reservation marked as ${status}` });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ success: false, error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
+// GET Admin's Stations (for filters)
+app.get('/api/admin/my-stations', async (req, res) => {
+    try {
+        const { adminId } = req.query;
+        if (!adminId) return res.status(400).json({ success: false, error: 'Admin ID required' });
+
+        let query = 'SELECT station_id as id, station_name as name FROM charging_stations';
+        const params = [];
+
+        if (adminId !== 'all') {
+            query += ' WHERE admin_id = $1';
+            params.push(adminId);
+        }
+
+        query += ' ORDER BY station_id ASC';
+        const result = await pool.query(query, params);
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 // CANCEL a reservation (update status and free up slot)
 app.put('/api/reservations/:id/cancel', async (req, res) => {
     const client = await pool.connect();
