@@ -339,34 +339,6 @@ GitHub: [@Thananontnc](https://github.com/Thananontnc)
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Course Instructor:** [Instructor Name]
-- **Assumption University** - School of Information Technology
-- **Open Source Libraries:** React, Leaflet, Express, PostgreSQL
-- **Inspiration:** Google Maps Navigation, Tesla Supercharger Network
-
----
-
-## 📸 Screenshots
-
-### Landing Page
-Modern, professional homepage with trust indicators and partner showcase
-
-### User Dashboard
-Interactive map with real-time station availability and booking interface
-
-### Navigation System
-3D turn-by-turn directions with ETA, alternative routes, and route overview
-
-### Admin Dashboard
-Comprehensive analytics with KPIs, revenue tracking, and reservation management
-
-### Operator Portal
-Station management interface with CRUD operations and performance metrics
-
----
-
 ## 🐛 Known Issues & Future Enhancements
 
 ### Current Limitations
@@ -383,15 +355,6 @@ Station management interface with CRUD operations and performance metrics
 - [ ] Charging station reviews and ratings
 - [ ] Loyalty program and rewards
 - [ ] Multi-language support (Thai/English)
-
----
-
-## 📞 Support
-
-For questions or issues related to this project:
-- Create an issue on GitHub
-- Contact via email: [Your Email]
-- Course discussion forum: [Link if applicable]
 
 ---
 
