@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Map, MapPin, Clock, Navigation } from 'lucide-react';
 import MapComponent from '../components/MapComponent';
 import ReservationModal from '../components/ReservationModal';
@@ -10,6 +11,116 @@ const UserDashboard = () => {
     const [destination, setDestination] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStation, setSelectedStation] = useState(null); // For Reservation Modal
+    const [allStations, setAllStations] = useState([]); // Stations from API
+    const [loading, setLoading] = useState(true);
+    const [bookingHistory, setBookingHistory] = useState([]); // Store confirmed reservations
+    const [selectedType, setSelectedType] = useState('All Types');
+    const [availabilityOnly, setAvailabilityOnly] = useState('All Stations');
+    const [stats, setStats] = useState({
+        nearest: '--',
+        available: 0,
+        waitTime: '--'
+    });
+    const navigate = useNavigate();
+
+    // Security check: Redirect to login if not authenticated
+    useEffect(() => {
+        const user = localStorage.getItem('user');
+        if (!user) {
+            navigate('/login');
+        }
+    }, [navigate]);
+
+    const API_URL = 'http://localhost:5001/api';
+
+    // Fetch stations from backend whenever filters change
+    useEffect(() => {
+        fetchStations();
+    }, [searchQuery, selectedType, availabilityOnly]);
+
+    // Initial fetch for history
+    useEffect(() => {
+        fetchBookingHistory();
+    }, []);
+
+    const fetchStations = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.append('search', searchQuery);
+            if (selectedType !== 'All Types') params.append('type', selectedType);
+            if (availabilityOnly === 'Available Only') params.append('available', 'true');
+
+            const response = await fetch(`${API_URL}/stations?${params.toString()}`);
+            const data = await response.json();
+            if (data.success) {
+                setAllStations(data.data);
+                calculateStats(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching stations:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateStats = (stationsList) => {
+        if (!stationsList || stationsList.length === 0) {
+            setStats({ nearest: '--', available: 0, waitTime: '--' });
+            return;
+        }
+
+        // 1. Available Slots
+        const totalAvailable = stationsList.reduce((acc, st) => acc + (st.available_slots || 0), 0);
+
+        // 2. Nearest Station (if user location available)
+        let nearestDist = '--';
+        if (userLocation) {
+            const distances = stationsList.map(st => {
+                const d = getDistance(userLocation[0], userLocation[1], st.lat, st.lng);
+                return d;
+            });
+            nearestDist = Math.min(...distances).toFixed(1) + ' km';
+        }
+
+        // 3. Avg Wait Time (Mock logic: based on slot occupancy)
+        const totalSlots = stationsList.reduce((acc, st) => acc + (st.total_slots || 0), 0);
+        const occupancy = totalSlots > 0 ? (totalSlots - totalAvailable) / totalSlots : 0;
+        const waitTime = Math.round(occupancy * 45) + ' min'; // Max 45 min wait
+
+        setStats({
+            nearest: nearestDist,
+            available: totalAvailable,
+            waitTime: waitTime
+        });
+    };
+
+    // Haversine formula to calculate distance in KM
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Radius of the earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    };
+
+    const fetchBookingHistory = async () => {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) return;
+
+        try {
+            const response = await fetch(`${API_URL}/reservations?customerId=${user.id}`);
+            const data = await response.json();
+            if (data.success) {
+                setBookingHistory(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching booking history:', error);
+        }
+    };
 
     // Get User's Real Location
     useEffect(() => {
@@ -30,28 +141,17 @@ const UserDashboard = () => {
         }
     }, []);
 
-    // Mock Stations data
-    const allStations = [
-        // Bangkok
-        { id: 1, name: 'Tesla Supercharger - Central World', address: 'Central World, Pathum Wan, Bangkok', distance: '0.8 mi', type: 'Supercharger', status: 'Available', lat: 13.7466, lng: 100.5393 },
-        { id: 2, name: 'PEA Volta - Bangchak', address: 'Vibhavadi Rangsit Rd, Bangkok', distance: '1.2 mi', type: 'CCS2', status: 'Busy', lat: 13.7845, lng: 100.5623 },
-        { id: 3, name: 'EA Anywhere - Siam Paragon', address: 'Siam Paragon, Rama I Rd, Bangkok', distance: '1.5 mi', type: 'Type 2', status: 'Available', lat: 13.7469, lng: 100.5349 },
-        { id: 4, name: 'EVgo - Don Mueang Airport', address: 'Vibhavadi Rangsit Rd, Bangkok', distance: '12 mi', type: 'CHAdeMO', status: 'Maintenance', lat: 13.9137, lng: 100.6046 },
-        { id: 5, name: 'Shell Recharge - Sukhumvit', address: 'Sukhumvit 24, Bangkok', distance: '5.1 mi', type: 'CCS', status: 'Available', lat: 13.7302, lng: 100.5694 },
 
-        // Out of Bangkok
-        { id: 6, name: 'Pattaya EV Station', address: 'Pattaya Beach Rd, Chon Buri', distance: '145 km', type: 'CCS2', status: 'Available', lat: 12.9276, lng: 100.8771 },
-        { id: 7, name: 'Hua Hin Charging Hub', address: 'Hua Hin, Prachuap Khiri Khan', distance: '198 km', type: 'Type 2', status: 'Available', lat: 12.5684, lng: 99.9577 },
-        { id: 8, name: 'Ayutthaya Historical Park', address: 'Phra Nakhon Si Ayutthaya', distance: '80 km', type: 'Type 2', status: 'Available', lat: 14.3532, lng: 100.5693 },
-        { id: 9, name: 'Chiang Mai EV Point', address: 'Nimman Road, Chiang Mai', distance: '680 km', type: 'CCS2', status: 'Available', lat: 18.7961, lng: 98.9793 },
-        { id: 10, name: 'Phuket Supercharger', address: 'Central Phuket, Phuket', distance: '840 km', type: 'Supercharger', status: 'Busy', lat: 7.8804, lng: 98.3923 },
-    ];
 
-    // Filter stations based on search query
-    const stations = allStations.filter(st =>
-        st.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        st.address.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Recalculate stats if user location becomes available
+    useEffect(() => {
+        if (userLocation && allStations.length > 0) {
+            calculateStats(allStations);
+        }
+    }, [userLocation]);
+
+    // Use allStations directly since backend handles filtering
+    const stations = allStations;
 
     const handleBook = (name) => {
         // Find station object if only name is passed or if full object passed
@@ -66,27 +166,70 @@ const UserDashboard = () => {
         setDestination([station.lat, station.lng]);
     };
 
-    const [bookingHistory, setBookingHistory] = useState([]); // Store confirmed reservations
+    const handleConfirmReservation = async (details) => {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) {
+            alert('Please login to book a station');
+            navigate('/login');
+            return;
+        }
 
-    // ... (existing code)
+        try {
+            const response = await fetch(`${API_URL}/reservations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...details,
+                    customerId: user.id
+                })
+            });
 
-    const handleConfirmReservation = (details) => {
-        alert(`Reservation Confirmed!\n\nStation: ${details.station.name}\nDate: ${details.date}\nTime: ${details.timeSlot}\nDuration: ${details.duration} hour(s)\n\nStarting Navigation to station...`);
+            const data = await response.json();
 
-        // Add to history
-        const newBooking = {
-            id: Date.now(), // simple unique id
-            stationName: details.station.name,
-            address: details.station.address,
-            date: details.date,
-            time: details.timeSlot,
-            duration: details.duration,
-            status: 'Confirmed'
-        };
-        setBookingHistory(prev => [newBooking, ...prev]);
+            if (data.success) {
+                const booking = data.data;
+                alert(`Reservation Confirmed!\n\nStation: ${booking.stationName}\nSlot Assigned: ${booking.slotNumber}\nDate: ${booking.date}\nTime: ${booking.time}\nDuration: ${booking.duration} hour(s)\nTotal Price: $${booking.totalPrice}\n\nStarting Navigation to station...`);
 
-        setSelectedStation(null); // Close modal
-        handleNavigate(details.station); // Auto-start navigation
+                // Refresh booking history and stations
+                await fetchBookingHistory();
+                await fetchStations();
+
+                setSelectedStation(null); // Close modal
+                handleNavigate(details.station); // Auto-start navigation
+            } else {
+                alert('Failed to create reservation: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error creating reservation:', error);
+            alert('Failed to create reservation. Please try again.');
+        }
+    };
+
+    const handleCancelReservation = async (reservationId) => {
+        if (!window.confirm('Are you sure you want to cancel this reservation? \n\nNote: Cancellations are only allowed before the booking starts.')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/reservations/${reservationId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Reservation cancelled successfully!');
+                await fetchBookingHistory();
+                await fetchStations();
+            } else {
+                // This will show the specific Time Logic reason from the backend
+                alert(`Cannot Cancel: ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Error cancelling reservation:', error);
+            alert('Error connecting to the reservation server. Please try again.');
+        }
     };
 
     // ... (render)
@@ -125,7 +268,11 @@ const UserDashboard = () => {
                                 </div>
                                 <div className="filter-group">
                                     <label>Charger Type</label>
-                                    <select className="filter-select">
+                                    <select
+                                        className="filter-select"
+                                        value={selectedType}
+                                        onChange={(e) => setSelectedType(e.target.value)}
+                                    >
                                         <option>All Types</option>
                                         <option>CCS</option>
                                         <option>CHAdeMO</option>
@@ -135,13 +282,27 @@ const UserDashboard = () => {
                                 </div>
                                 <div className="filter-group">
                                     <label>Availability</label>
-                                    <select className="filter-select">
+                                    <select
+                                        className="filter-select"
+                                        value={availabilityOnly}
+                                        onChange={(e) => setAvailabilityOnly(e.target.value)}
+                                    >
                                         <option>All Stations</option>
                                         <option>Available Only</option>
                                     </select>
                                 </div>
                                 <div className="filter-group" style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'flex-end' }}>
-                                    <button className="btn-secondary" style={{ height: '42px' }}>Clear Filters</button>
+                                    <button
+                                        className="btn-secondary"
+                                        style={{ height: '42px' }}
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setSelectedType('All Types');
+                                            setAvailabilityOnly('All Stations');
+                                        }}
+                                    >
+                                        Clear Filters
+                                    </button>
                                 </div>
                             </div>
 
@@ -152,25 +313,37 @@ const UserDashboard = () => {
                                     <p>Stations Found</p>
                                 </div>
                                 <div className="stat-item">
-                                    <h4>0.8 mi</h4>
+                                    <h4>{stats.nearest}</h4>
                                     <p>Nearest Station</p>
                                 </div>
                                 <div className="stat-item">
-                                    <h4 style={{ color: 'var(--primary)' }}>32 slots</h4>
+                                    <h4 style={{ color: 'var(--primary)' }}>
+                                        {stats.available} slots
+                                    </h4>
                                     <p>Available Today</p>
                                 </div>
                                 <div className="stat-item">
-                                    <h4>15 min</h4>
+                                    <h4>{stats.waitTime}</h4>
                                     <p>Avg Wait Time</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 3. Split View: List + Map */}
-                        <div className="split-view">
-                            {/* Left: Station List */}
-                            <div className="station-list-container">
-                                <h3 style={{ marginBottom: '8px' }}>Available Charging Stations</h3>
+                        {/* 3. Full Width Map Visualization */}
+                        <div className="map-container" style={{ marginBottom: '32px', height: '450px' }}>
+                            <MapComponent
+                                stations={stations}
+                                userLocation={userLocation}
+                                destination={destination}
+                                onMarkerClick={(st) => handleBook(st)}
+                                onExitNav={() => setDestination(null)}
+                            />
+                        </div>
+
+                        {/* 4. Station List */}
+                        <div className="station-list-container">
+                            <h3 style={{ marginBottom: '16px', fontSize: '1.5rem' }}>Available Charging Stations</h3>
+                            <div className="station-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
                                 {stations.map(st => (
                                     <div key={st.id} className="card station-card">
                                         <div className="station-main">
@@ -183,6 +356,13 @@ const UserDashboard = () => {
                                         <div className="station-info-col">
                                             <span className="station-label">Type</span>
                                             <span className="station-value">{st.type}</span>
+                                        </div>
+
+                                        <div className="station-info-col">
+                                            <span className="station-label">Slots</span>
+                                            <span className="station-value" style={{ color: st.available_slots > 0 ? 'var(--primary)' : 'var(--danger)' }}>
+                                                {st.available_slots} / {st.total_slots}
+                                            </span>
                                         </div>
 
                                         <div className="station-actions" style={{ justifyContent: 'center', alignItems: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -205,16 +385,6 @@ const UserDashboard = () => {
                                     </div>
                                 ))}
                             </div>
-
-                            {/* Right: Map Visualization */}
-                            <div className="map-container">
-                                <MapComponent
-                                    stations={stations}
-                                    userLocation={userLocation}
-                                    destination={destination}
-                                    onMarkerClick={(st) => handleBook(st)}
-                                />
-                            </div>
                         </div>
                     </>
                 )}
@@ -230,16 +400,28 @@ const UserDashboard = () => {
                                     <div key={booking.id} className="history-item" style={{ borderBottom: '1px solid #eee', padding: '15px 0' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                                             <h4 style={{ margin: 0 }}>{booking.stationName}</h4>
-                                            <span className="badge available">{booking.status}</span>
+                                            <span className={`badge ${booking.status.toLowerCase()}`}>{booking.status}</span>
                                         </div>
                                         <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#666' }}>
                                             <MapPin size={14} style={{ marginRight: '5px', verticalAlign: 'text-bottom' }} />
                                             {booking.address}
                                         </p>
-                                        <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem', marginTop: '5px' }}>
-                                            <span><strong>Date:</strong> {booking.date}</span>
-                                            <span><strong>Time:</strong> {booking.time}</span>
-                                            <span><strong>Duration:</strong> {booking.duration} hr(s)</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                                            <div style={{ display: 'flex', gap: '15px', fontSize: '0.9rem' }}>
+                                                <span><strong>Date:</strong> {booking.date}</span>
+                                                <span><strong>Time:</strong> {booking.time}</span>
+                                                <span><strong>Slot:</strong> #{booking.slotNumber}</span>
+                                                <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>${booking.totalPrice}</span>
+                                            </div>
+                                            {booking.status === 'Confirmed' && (
+                                                <button
+                                                    className="btn-secondary"
+                                                    style={{ color: 'var(--danger)', borderColor: 'var(--danger)', padding: '5px 12px', fontSize: '0.8rem' }}
+                                                    onClick={() => handleCancelReservation(booking.id)}
+                                                >
+                                                    Cancel Reservation
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

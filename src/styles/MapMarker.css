@@ -37,3 +37,25 @@
         opacity: 0;
     }
 }
+
+/* Destination Pin */
+.destination-pin {
+    width: 30px;
+    height: 30px;
+    background: #ff3d00;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(255, 61, 0, 0.5);
+    border: 2px solid white;
+}
+
+.pin-inner {
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    transform: rotate(45deg);
+}

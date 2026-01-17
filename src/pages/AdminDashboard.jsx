@@ -1,40 +1,252 @@
-import { useState } from 'react';
-import { Users, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    LayoutDashboard,
+    Calendar,
+    CreditCard,
+    Settings,
+    RefreshCw,
+    Filter,
+    Download,
+    TrendingUp,
+    Clock,
+    DollarSign,
+    Zap
+} from 'lucide-react';
 import '../styles/Dashboard.css';
+import PaymentDetailModal from '../components/PaymentDetailModal';
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState('approvals');
+    const navigate = useNavigate();
+    const [admin, setAdmin] = useState(null);
+    const [selectedPaymentId, setSelectedPaymentId] = useState(null);
+    const [stats, setStats] = useState({
+        totalReservations: 0,
+        pendingApprovals: 0,
+        totalRevenue: "0.00",
+        activeStations: 0
+    });
+
+    const [reservations, setReservations] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [myStations, setMyStations] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Filters for Reservations
+    const [resFilterStatus, setResFilterStatus] = useState('All statuses');
+    const [resFilterStation, setResFilterStation] = useState('all');
+
+    const API_URL = 'http://localhost:5001/api/admin';
+
+    useEffect(() => {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (!storedUser || storedUser.role !== 'admin') {
+            navigate('/login');
+            return;
+        }
+        setAdmin(storedUser);
+        fetchAllData(storedUser.id);
+    }, []);
+
+    const fetchAllData = async (adminId) => {
+        setLoading(true);
+        try {
+            await Promise.all([
+                fetchStats(adminId),
+                fetchReservations(adminId),
+                fetchPayments(adminId),
+                fetchMyStations(adminId)
+            ]);
+        } catch (err) {
+            console.error("Error fetching admin data:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchStats = async (adminId) => {
+        const res = await fetch(`${API_URL}/stats?adminId=${adminId}`);
+        const data = await res.json();
+        if (data.success) setStats(data.data);
+    };
+
+    const fetchReservations = async (adminId) => {
+        const res = await fetch(`${API_URL}/reservations?adminId=${adminId}&status=${resFilterStatus}&stationId=${resFilterStation}`);
+        const data = await res.json();
+        if (data.success) setReservations(data.data);
+    };
+
+    const fetchPayments = async (adminId) => {
+        const res = await fetch(`${API_URL}/payments?adminId=${adminId}`);
+        const data = await res.json();
+        if (data.success) setPayments(data.data);
+    };
+
+    const fetchMyStations = async (adminId) => {
+        const res = await fetch(`${API_URL}/my-stations?adminId=${adminId}`);
+        const data = await res.json();
+        if (data.success) setMyStations(data.data);
+    };
+
+    // Auto-refresh reservations when filters change
+    useEffect(() => {
+        if (admin) fetchReservations(admin.id);
+    }, [resFilterStatus, resFilterStation]);
+
+    if (!admin) return null;
 
     return (
-        <div className="dashboard container">
-            <header className="dashboard-header">
-                <h2 className="title">System Admin</h2>
-                <div className="dashboard-tabs">
-                    <button className={`tab ${activeTab === 'approvals' ? 'active' : ''}`} onClick={() => setActiveTab('approvals')}>
-                        <Shield size={18} /> Approvals
-                    </button>
-                    <button className={`tab ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
-                        <Users size={18} /> User Management
-                    </button>
-                </div>
-            </header>
+        <div className="admin-container" style={{ padding: '24px', background: 'var(--bg-body)', minHeight: '100vh', color: 'var(--text-main)' }}>
+            <h1 style={{ fontSize: '2rem', marginBottom: '32px', fontWeight: '700' }}>Admin Dashboard</h1>
 
-            <main className="dashboard-content">
-                {activeTab === 'approvals' && (
-                    <div className="station-list">
-                        <div className="card station-card">
-                            <div className="station-info">
-                                <h3>New Partner Request: GreenEnergy Co.</h3>
-                                <p className="text-muted">Registered: 2 hours ago</p>
-                            </div>
-                            <div className="station-actions" style={{ flexDirection: 'row' }}>
-                                <button className="btn-primary"><CheckCircle size={18} /> Approve</button>
-                                <button className="btn-secondary" style={{ color: '#ff3d00' }}><XCircle size={18} /> Reject</button>
-                            </div>
+            {/* Overview KPIs */}
+            <section style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '16px', color: 'var(--text-muted)' }}>Overview KPIs</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+                    <div className="card" style={{ padding: '24px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Total Reservations</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary)' }}>{stats.totalReservations}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Across all time</div>
+                    </div>
+                    <div className="card" style={{ padding: '24px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Pending Approvals</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ffb700' }}>{stats.pendingApprovals} approvals</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Awaiting manager action</div>
+                    </div>
+                    <div className="card" style={{ padding: '24px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Total Revenue</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: '#00e676' }}>US${stats.totalRevenue}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Month to date</div>
+                    </div>
+                    <div className="card" style={{ padding: '24px' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '8px' }}>Active Stations</div>
+                        <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary)' }}>{stats.activeStations}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Current active stations</div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Reservation Management */}
+            <section style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', fontWeight: '700' }}>Reservation Management</h2>
+
+                {/* Filters */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filter by Status</label>
+                        <select
+                            value={resFilterStatus}
+                            onChange={(e) => setResFilterStatus(e.target.value)}
+                            style={{ padding: '10px', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', width: '200px' }}
+                        >
+                            <option>All statuses</option>
+                            <option>Pending</option>
+                            <option>Confirmed</option>
+                            <option>Cancelled</option>
+                        </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filter by Station</label>
+                        <select
+                            value={resFilterStation}
+                            onChange={(e) => setResFilterStation(e.target.value)}
+                            style={{ padding: '10px', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', width: '250px' }}
+                        >
+                            <option value="all">All stations</option>
+                            {myStations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                    </div>
+                    <button className="btn-secondary" onClick={() => { setResFilterStatus('All statuses'); setResFilterStation('all'); }} style={{ padding: '10px 20px', height: '42px' }}>Clear Filters</button>
+                    <button className="btn-secondary" onClick={() => fetchReservations(admin.id)} style={{ padding: '10px 20px', height: '42px' }}><RefreshCw size={16} /> Refresh</button>
+                </div>
+
+                {/* Table */}
+                <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                                <th style={{ padding: '16px' }}>ID</th>
+                                <th style={{ padding: '16px' }}>User</th>
+                                <th style={{ padding: '16px' }}>Station</th>
+                                <th style={{ padding: '16px' }}>Start</th>
+                                <th style={{ padding: '16px' }}>End</th>
+                                <th style={{ padding: '16px' }}>Total</th>
+                                <th style={{ padding: '16px' }}>Status</th>
+                                <th style={{ padding: '16px' }}>Slot</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reservations.map(res => (
+                                <tr key={res.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <td style={{ padding: '16px' }}>{res.id}</td>
+                                    <td style={{ padding: '16px' }}>{res.userName}</td>
+                                    <td style={{ padding: '16px' }}>{res.stationName}</td>
+                                    <td style={{ padding: '16px', fontSize: '0.85rem' }}>{res.start}</td>
+                                    <td style={{ padding: '16px', fontSize: '0.85rem' }}>{res["end"]}</td>
+                                    <td style={{ padding: '16px', fontWeight: '600' }}>${res.total}</td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span className={`badge ${res.status.toLowerCase()}`}>{res.status}</span>
+                                    </td>
+                                    <td style={{ padding: '16px' }}>#{res.slot}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div style={{ padding: '12px 16px', fontSize: '0.85rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{reservations.length} results</span>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Filter size={14} style={{ cursor: 'pointer' }} />
+                            <Download size={14} style={{ cursor: 'pointer' }} />
                         </div>
                     </div>
-                )}
-            </main>
+                </div>
+            </section>
+
+            {/* Payment Management */}
+            <section>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', fontWeight: '700' }}>Payment Management</h2>
+                <div className="card" style={{ padding: '0', overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                                <th style={{ padding: '16px' }}>ID</th>
+                                <th style={{ padding: '16px' }}>Reservation</th>
+                                <th style={{ padding: '16px' }}>Amount</th>
+                                <th style={{ padding: '16px' }}>Method</th>
+                                <th style={{ padding: '16px' }}>Status</th>
+                                <th style={{ padding: '16px' }}>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {payments.map(pay => (
+                                <tr
+                                    key={pay.id}
+                                    className="clickable-row"
+                                    onClick={() => setSelectedPaymentId(pay.id)}
+                                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                                >
+                                    <td style={{ padding: '16px' }}>{pay.id}</td>
+                                    <td style={{ padding: '16px' }}>#{pay.reservationId}</td>
+                                    <td style={{ padding: '16px', fontWeight: '600', color: '#00e676' }}>US${pay.amount}</td>
+                                    <td style={{ padding: '16px' }}>{pay.method}</td>
+                                    <td style={{ padding: '16px' }}>
+                                        <span className={`badge ${pay.status.toLowerCase()}`}>{pay.status}</span>
+                                    </td>
+                                    <td style={{ padding: '16px', fontSize: '0.85rem' }}>{pay.createdAt}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            {selectedPaymentId && (
+                <PaymentDetailModal
+                    paymentId={selectedPaymentId}
+                    onClose={() => setSelectedPaymentId(null)}
+                    onRefresh={() => fetchAllData(admin.id)}
+                />
+            )}
         </div>
     );
 };

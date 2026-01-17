@@ -15,10 +15,9 @@ const LandingPage = () => {
                         The smartest EV charging network in Thailand. Find stations, book slots, and pay seamlessly.
                     </p>
                     <div className="hero-actions">
-                        <Link to="/user/search" className="btn-primary btn-lg">
+                        <Link to={localStorage.getItem('user') ? "/user/search" : "/login"} className="btn-primary btn-lg">
                             Find a Station
                         </Link>
-
                     </div>
                 </div>
             </section>
@@ -30,7 +29,7 @@ const LandingPage = () => {
                     <p>Real-time availability of charging stations near you.</p>
                 </div>
                 <div className="feature-card">
-                    <BatteryCharging className="feature-icon" color="var(--scondary)" size={40} />
+                    <BatteryCharging className="feature-icon" color="var(--secondary)" size={40} />
                     <h3>Fast Charging</h3>
                     <p>Filter by 50kW, 120kW, or superchargers for your needs.</p>
                 </div>

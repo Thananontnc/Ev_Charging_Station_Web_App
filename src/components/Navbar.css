@@ -43,3 +43,27 @@
     display: flex;
     gap: 16px;
 }
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 12px 0;
+    }
+
+    .nav-logo span {
+        display: none;
+        /* Hide text on small screens */
+    }
+
+    .nav-links {
+        gap: 16px;
+    }
+
+    .nav-link {
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
