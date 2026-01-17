@@ -359,4 +359,3 @@ GitHub: [@Thananontnc](https://github.com/Thananontnc)
 ---
 
 **Built with ❤️ for CSX3006 Database System**  
-**Assumption University - 2026**
