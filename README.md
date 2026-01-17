@@ -333,8 +333,8 @@ This project is created for educational purposes as part of the CSX3006 Database
 ## 👨‍💻 Author
 
 **Thananon Chounudom**  
-Student ID: [Your Student ID]  
-Email: [Your Email]  
+Student ID: 6711424  
+Email: thananonza123@gmail.com  
 GitHub: [@Thananontnc](https://github.com/Thananontnc)
 
 ---
