@@ -68,3 +68,71 @@ CREATE TABLE payments (
     amount DECIMAL(10, 2) NOT NULL,
     payment_status VARCHAR(50) DEFAULT 'Pending' -- 'Pending', 'Success', 'Failed'
 );
+
+
+-- for https://dbdiagram.io/d
+
+-- Table admins {
+--   admin_id int [pk, increment]
+--   username varchar(100) [unique, not null]
+--   password varchar(255) [not null]
+--   name varchar(100) [not null]
+--   email varchar(100) [unique, not null]
+--   contact_info varchar(100)
+-- }
+
+-- Table customers {
+--   customer_id int [pk, increment]
+--   username varchar(100) [unique, not null]
+--   password varchar(255) [not null]
+--   name varchar(100) [not null]
+--   email varchar(100) [unique, not null]
+--   phone_number varchar(20)
+--   payment_info varchar(255)
+--   created_at timestamp
+-- }
+
+-- Table charging_stations {
+--   station_id int [pk, increment]
+--   admin_id int
+--   station_name varchar(200) [not null]
+--   latitude decimal(10,6) [not null]
+--   longitude decimal(10,6) [not null]
+--   connector_type varchar(50)
+--   charging_watt int
+--   total_slots int
+--   available_slots int
+--   price_per_kwh decimal(10,2)
+--   status varchar(20)
+--   description text
+--   operating_hours varchar(100)
+--   average_wait_time int
+--   last_updated timestamp
+-- }
+
+-- Table reservations {
+--   reservation_id int [pk, increment]
+--   customer_id int
+--   station_id int
+--   admin_id int
+--   slot_number int
+--   start_time timestamp [not null]
+--   end_time timestamp [not null]
+--   total_price decimal(10,2)
+--   status varchar(20)
+-- }
+
+-- Table payments {
+--   payment_id int [pk, increment]
+--   reservation_id int
+--   payment_date timestamp
+--   payment_method varchar(50)
+--   amount decimal(10,2) [not null]
+--   payment_status varchar(50)
+-- }
+
+-- Ref: charging_stations.admin_id > admins.admin_id
+-- Ref: reservations.customer_id > customers.customer_id
+-- Ref: reservations.station_id > charging_stations.station_id
+-- Ref: reservations.admin_id > admins.admin_id
+-- Ref: payments.reservation_id > reservations.reservation_id
