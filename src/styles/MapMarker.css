@@ -50,6 +50,7 @@
     justify-content: center;
     box-shadow: 0 0 15px rgba(255, 61, 0, 0.5);
     border: 2px solid white;
+    animation: bounce 2s infinite;
 }
 
 .pin-inner {
@@ -58,4 +59,503 @@
     background: white;
     border-radius: 50%;
     transform: rotate(45deg);
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: rotate(-45deg) translateY(0);
+    }
+
+    50% {
+        transform: rotate(-45deg) translateY(-5px);
+    }
+}
+
+/* Map Controls */
+.map-recenter-btn {
+    position: absolute;
+    bottom: 140px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.map-recenter-btn:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+.map-recenter-btn:active {
+    transform: scale(0.95);
+}
+
+/* Navigation Overlay - Right Side Panel */
+.nav-overlay {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-overlay.expanded {
+    max-height: 80vh;
+}
+
+/* ETA Information Bar */
+.nav-eta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.eta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.eta-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.eta-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2979ff;
+}
+
+.eta-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Route Controls */
+.nav-controls {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.nav-control-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f0f0f0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.nav-control-btn:hover {
+    background: #e0e0e0;
+}
+
+.nav-control-btn.active {
+    background: #2979ff;
+    color: white;
+    border-color: #2979ff;
+}
+
+/* Alternative Routes Panel */
+.alt-routes-panel {
+    padding: 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.alt-routes-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.alt-route-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.alt-route-card:hover {
+    border-color: #2979ff;
+    transform: translateX(4px);
+}
+
+.alt-route-card.selected {
+    border-color: #2979ff;
+    background: #e3f2fd;
+}
+
+.alt-route-badge {
+    padding: 4px 8px;
+    background: #2979ff;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.alt-route-card.selected .alt-route-badge {
+    background: #1565c0;
+}
+
+.alt-route-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.alt-route-time {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.alt-route-distance {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.alt-route-eta {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 600;
+}
+
+.nav-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #2979ff 0%, #1565c0 100%);
+    color: white;
+    gap: 16px;
+}
+
+.nav-guidance-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+}
+
+.nav-content-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-instruction-main {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.nav-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.nav-actions-overlay {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nav-toggle-steps,
+.nav-close {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.nav-toggle-steps:hover,
+.nav-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.nav-toggle-steps:active,
+.nav-close:active {
+    transform: scale(0.95);
+}
+
+/* Turn-by-Turn Steps List - Enhanced */
+.nav-steps-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    background: #fafafa;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.nav-step-item {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    gap: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    position: relative;
+}
+
+.nav-step-item:hover {
+    background: #f5f9ff;
+}
+
+.nav-step-item.active-step {
+    background: linear-gradient(90deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-left: 5px solid #4caf50;
+    padding-left: 15px;
+}
+
+.nav-step-item.active-step::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, #4caf50 0%, #66bb6a 100%);
+}
+
+.step-icon {
+    width: 56px;
+    height: 56px;
+    background: #e3f2fd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #2979ff;
+    box-shadow: 0 2px 8px rgba(41, 121, 255, 0.15);
+    transition: all 0.2s ease;
+}
+
+.nav-step-item:hover .step-icon {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(41, 121, 255, 0.25);
+}
+
+.active-step .step-icon {
+    background: #4caf50;
+    color: white;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.step-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.step-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.step-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.active-step .step-text {
+    color: #2e7d32;
+    font-weight: 700;
+}
+
+.step-distance {
+    font-size: 0.9rem;
+    color: #757575;
+    font-weight: 500;
+}
+
+.active-step .step-distance {
+    color: #388e3c;
+    font-weight: 600;
+}
+
+/* Progress Bar */
+.nav-progress-bar {
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2979ff 0%, #1565c0 100%);
+    width: 0%;
+    animation: progress-pulse 2s ease-in-out infinite;
+}
+
+@keyframes progress-pulse {
+
+    0%,
+    100% {
+        width: 30%;
+    }
+
+    50% {
+        width: 70%;
+    }
+}
+
+/* Custom Scrollbar for Steps */
+.nav-steps-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nav-steps-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.nav-steps-list::-webkit-scrollbar-thumb {
+    background: #2979ff;
+    border-radius: 3px;
+}
+
+.nav-steps-list::-webkit-scrollbar-thumb:hover {
+    background: #1565c0;
+}
+
+/* Station Popup Styling */
+.leaflet-popup-content-wrapper {
+    background: #151b2b !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+    background: #151b2b !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-overlay {
+        width: calc(100vw - 30px);
+        top: 15px;
+        right: 15px;
+    }
+
+    .nav-header {
+        padding: 12px 16px;
+    }
+
+    .nav-instruction-main {
+        font-size: 1rem;
+    }
+
+    .nav-guidance-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .step-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .step-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .map-recenter-btn {
+        bottom: 120px;
+        left: 15px;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* 3D Map Tilt Effect (simulated with transform) */
+.leaflet-container {
+    transition: transform 0.3s ease;
+}
+
+.leaflet-container.nav-active {
+    perspective: 1000px;
+}
+
+/* Smooth marker animations */
+.leaflet-marker-icon {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.leaflet-marker-icon:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }

@@ -1,0 +1,2 @@
+// Add this import at the top of MapComponent.jsx if not already there
+import '../styles/MapMarker.css';

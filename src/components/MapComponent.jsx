@@ -5,6 +5,7 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import { Target, X, LocateFixed, ArrowUp, CornerUpLeft, CornerUpRight, MoveUpRight, MoveUpLeft, Flag, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import '../styles/MapMarker.css';
 
 // Fix for default Leaflet marker icons in React
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -47,8 +48,8 @@ const getDirectionIcon = (type) => {
     return <ArrowUp size={18} />;
 };
 
-// Component to handle routing
-const RoutingControl = ({ start, end, onRouteUpdate }) => {
+// Component to handle routing with alternative routes
+const RoutingControl = ({ start, end, onRouteUpdate, showAlternatives = false }) => {
     const map = useMap();
 
     useEffect(() => {
@@ -60,7 +61,12 @@ const RoutingControl = ({ start, end, onRouteUpdate }) => {
                 L.latLng(end[0], end[1])
             ],
             routeWhileDragging: false,
-            showAlternatives: false,
+            showAlternatives: showAlternatives,
+            altLineOptions: {
+                styles: [
+                    { color: '#9e9e9e', opacity: 0.6, weight: 4 }
+                ]
+            },
             fitSelectedRoutes: true,
             addWaypoints: false,
             lineOptions: {
@@ -74,33 +80,58 @@ const RoutingControl = ({ start, end, onRouteUpdate }) => {
 
         routingControl.on('routesfound', (e) => {
             const routes = e.routes;
-            const summary = routes[0].summary;
-            const instructions = routes[0].instructions;
-            onRouteUpdate({
-                distance: (summary.totalDistance / 1000).toFixed(1), // km
-                time: Math.round(summary.totalTime / 60), // minutes
-                instructions: instructions
-            });
+            const allRoutes = routes.map((route, idx) => ({
+                summary: route.summary,
+                instructions: route.instructions,
+                distance: (route.summary.totalDistance / 1000).toFixed(1),
+                time: Math.round(route.summary.totalTime / 60),
+                eta: new Date(Date.now() + route.summary.totalTime * 1000),
+                isAlternative: idx > 0
+            }));
+
+            onRouteUpdate(allRoutes);
         });
 
         return () => map.removeControl(routingControl);
-    }, [map, start, end]);
+    }, [map, start, end, showAlternatives]);
 
     return null;
 };
 
-// Recenter Control
+// Recenter Control with smooth animation
 const RecenterButton = ({ position }) => {
     const map = useMap();
     return (
         <button
             className="map-recenter-btn"
-            onClick={() => map.setView(position, 15)}
+            onClick={() => map.flyTo(position, 16, {
+                animate: true,
+                duration: 1.5,
+                easeLinearity: 0.25
+            })}
             title="Recenter on me"
         >
             <LocateFixed size={20} />
         </button>
     );
+};
+
+// 3D-Style Camera Controller
+const CameraController = ({ target, zoom = 17, shouldFly }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (target && shouldFly) {
+            // Smooth 3D-style flyTo animation
+            map.flyTo([target.lat, target.lng], zoom, {
+                animate: true,
+                duration: 2,
+                easeLinearity: 0.2
+            });
+        }
+    }, [target, zoom, shouldFly, map]);
+
+    return null;
 };
 
 // Component to ensure map recalculates size on container changes
@@ -121,10 +152,18 @@ const ResizeHandler = () => {
 };
 
 const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 100.5018], zoom = 12, onMarkerClick, onExitNav }) => {
-    const [routeInfo, setRouteInfo] = useState(null);
+    const [allRoutes, setAllRoutes] = useState([]);
+    const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
     const [showSteps, setShowSteps] = useState(false);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [cameraTarget, setCameraTarget] = useState(null);
+    const [shouldFlyToTarget, setShouldFlyToTarget] = useState(false);
+    const [showAlternatives, setShowAlternatives] = useState(false);
+    const [showRouteOverview, setShowRouteOverview] = useState(false);
     const mapRef = useState(null);
+
+    // Get current selected route
+    const routeInfo = allRoutes[selectedRouteIndex];
 
     // Sync current step when route is found
     useEffect(() => {
@@ -133,9 +172,62 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
         }
     }, [routeInfo]);
 
+    // Calculate ETA
+    const getETAString = (eta) => {
+        if (!eta) return '';
+        const hours = eta.getHours();
+        const minutes = eta.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    };
+
+    // Calculate distance remaining based on current step
+    const getDistanceRemaining = () => {
+        if (!routeInfo?.instructions || currentStepIndex >= routeInfo.instructions.length) {
+            return routeInfo?.distance || '0';
+        }
+
+        let remaining = 0;
+        for (let i = currentStepIndex; i < routeInfo.instructions.length; i++) {
+            remaining += routeInfo.instructions[i].distance;
+        }
+        return (remaining / 1000).toFixed(1);
+    };
+
     const handleStepClick = (step, idx) => {
         setCurrentStepIndex(idx);
-        // We'll use the map instance from a hidden child to zoom
+        // Trigger 3D-style camera movement to the step location
+        if (step.latLng) {
+            setCameraTarget({ lat: step.latLng.lat, lng: step.latLng.lng });
+            setShouldFlyToTarget(true);
+            setTimeout(() => setShouldFlyToTarget(false), 100);
+        }
+    };
+
+    const handleMarkerClick = (station) => {
+        // Smooth camera movement to station
+        setCameraTarget({ lat: station.lat, lng: station.lng });
+        setShouldFlyToTarget(true);
+        setTimeout(() => setShouldFlyToTarget(false), 100);
+
+        // Call parent callback
+        if (onMarkerClick) {
+            onMarkerClick(station);
+        }
+    };
+
+    const handleRouteSelect = (index) => {
+        setSelectedRouteIndex(index);
+        setCurrentStepIndex(0);
+    };
+
+    const toggleRouteOverview = () => {
+        setShowRouteOverview(!showRouteOverview);
+        if (!showRouteOverview && userLocation && destination) {
+            // Fit bounds to show entire route
+            setCameraTarget(null);
+        }
     };
 
     // Component to handle map actions internally
@@ -149,6 +241,18 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
         return null;
     };
 
+    // Component to fit route bounds
+    const RouteBoundsHandler = ({ start, end, shouldFit }) => {
+        const map = useMap();
+        useEffect(() => {
+            if (shouldFit && start && end) {
+                const bounds = L.latLngBounds([start, end]);
+                map.fitBounds(bounds, { padding: [50, 50], animate: true });
+            }
+        }, [shouldFit, start, end, map]);
+        return null;
+    };
+
     const currentStep = routeInfo?.instructions?.[currentStepIndex];
 
     return (
@@ -158,6 +262,7 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
                 zoom={zoom}
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={false}
+                className={destination ? 'nav-active' : ''}
             >
                 <ResizeHandler />
                 <TileLayer
@@ -165,11 +270,26 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 />
 
+                {/* 3D Camera Controller */}
+                <CameraController
+                    target={cameraTarget}
+                    zoom={17}
+                    shouldFly={shouldFlyToTarget}
+                />
+
+                {/* Route Bounds Handler for Overview */}
+                <RouteBoundsHandler
+                    start={userLocation}
+                    end={destination}
+                    shouldFit={showRouteOverview}
+                />
+
                 {userLocation && destination && (
                     <RoutingControl
                         start={userLocation}
                         end={destination}
-                        onRouteUpdate={setRouteInfo}
+                        onRouteUpdate={setAllRoutes}
+                        showAlternatives={showAlternatives}
                     />
                 )}
 
@@ -197,7 +317,7 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
                         key={station.id}
                         position={[station.lat, station.lng]}
                         eventHandlers={{
-                            click: () => onMarkerClick && onMarkerClick(station),
+                            click: () => handleMarkerClick(station),
                         }}
                     >
                         <Popup className="station-popup">
@@ -211,10 +331,10 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
                                         style={{ padding: '4px 12px', fontSize: '0.8rem' }}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onMarkerClick(station);
+                                            handleMarkerClick(station);
                                         }}
                                     >
-                                        Select
+                                        Navigate
                                     </button>
                                 </div>
                             </div>
@@ -223,33 +343,107 @@ const MapComponent = ({ stations, userLocation, destination, center = [13.7563, 
                 ))}
             </MapContainer>
 
-            {/* Google Maps Style Navigation Overlay */}
+            {/* Enhanced Navigation Overlay */}
             {destination && routeInfo && (
                 <div className={`nav-overlay ${showSteps ? 'expanded' : ''}`}>
+                    {/* ETA and Distance Header */}
+                    <div className="nav-eta-bar">
+                        <div className="eta-item">
+                            <span className="eta-label">ETA</span>
+                            <span className="eta-value">{getETAString(routeInfo.eta)}</span>
+                        </div>
+                        <div className="eta-divider"></div>
+                        <div className="eta-item">
+                            <span className="eta-label">Remaining</span>
+                            <span className="eta-value">{getDistanceRemaining()} km</span>
+                        </div>
+                        <div className="eta-divider"></div>
+                        <div className="eta-item">
+                            <span className="eta-label">Duration</span>
+                            <span className="eta-value">{routeInfo.time} min</span>
+                        </div>
+                    </div>
+
+                    {/* Main Navigation Header */}
                     <div className="nav-header">
                         <div className="nav-guidance-icon">
-                            {currentStep ? getDirectionIcon(currentStep.type) : <Target color="var(--primary)" />}
+                            {currentStep ? getDirectionIcon(currentStep.type) : <Target color="white" />}
                         </div>
                         <div className="nav-content-box">
                             <span className="nav-instruction-main">
                                 {currentStep ? currentStep.text : "Navigating..."}
                             </span>
                             <span className="nav-subtitle">
-                                {routeInfo.distance} km total • {routeInfo.time} mins left
+                                Then in {currentStep?.distance >= 1000
+                                    ? (currentStep.distance / 1000).toFixed(1) + ' km'
+                                    : Math.round(currentStep?.distance || 0) + ' m'}
                             </span>
                         </div>
                         <div className="nav-actions-overlay">
-                            <button className="nav-toggle-steps" onClick={() => setShowSteps(!showSteps)}>
+                            <button
+                                className="nav-toggle-steps"
+                                onClick={() => setShowSteps(!showSteps)}
+                                title="Show all steps"
+                            >
                                 {showSteps ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                             </button>
-                            <button className="nav-close" onClick={() => {
-                                onExitNav();
-                                setShowSteps(false);
-                            }}>
+                            <button
+                                className="nav-close"
+                                onClick={() => {
+                                    onExitNav();
+                                    setShowSteps(false);
+                                    setShowAlternatives(false);
+                                    setShowRouteOverview(false);
+                                }}
+                                title="Exit navigation"
+                            >
                                 <X size={20} />
                             </button>
                         </div>
                     </div>
+
+                    {/* Route Controls */}
+                    <div className="nav-controls">
+                        <button
+                            className={`nav-control-btn ${showAlternatives ? 'active' : ''}`}
+                            onClick={() => setShowAlternatives(!showAlternatives)}
+                        >
+                            <MapIcon size={16} />
+                            <span>Routes</span>
+                        </button>
+                        <button
+                            className={`nav-control-btn ${showRouteOverview ? 'active' : ''}`}
+                            onClick={toggleRouteOverview}
+                        >
+                            <Target size={16} />
+                            <span>Overview</span>
+                        </button>
+                    </div>
+
+                    {/* Alternative Routes Selector */}
+                    {showAlternatives && allRoutes.length > 1 && (
+                        <div className="alt-routes-panel">
+                            <h4 className="alt-routes-title">Choose Route</h4>
+                            {allRoutes.map((route, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`alt-route-card ${idx === selectedRouteIndex ? 'selected' : ''}`}
+                                    onClick={() => handleRouteSelect(idx)}
+                                >
+                                    <div className="alt-route-badge">
+                                        {idx === 0 ? 'Fastest' : `Alt ${idx}`}
+                                    </div>
+                                    <div className="alt-route-info">
+                                        <span className="alt-route-time">{route.time} min</span>
+                                        <span className="alt-route-distance">{route.distance} km</span>
+                                    </div>
+                                    <div className="alt-route-eta">
+                                        ETA: {getETAString(route.eta)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {showSteps && routeInfo.instructions && (
                         <div className="nav-steps-list">
