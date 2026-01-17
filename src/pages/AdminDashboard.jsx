@@ -36,6 +36,9 @@ const AdminDashboard = () => {
     // Filters for Reservations
     const [resFilterStatus, setResFilterStatus] = useState('All statuses');
     const [resFilterStation, setResFilterStation] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const API_URL = 'http://localhost:5001/api/admin';
 
@@ -73,9 +76,23 @@ const AdminDashboard = () => {
     };
 
     const fetchReservations = async (adminId) => {
-        const res = await fetch(`${API_URL}/reservations?adminId=${adminId}&status=${resFilterStatus}&stationId=${resFilterStation}`);
+        const res = await fetch(`${API_URL}/reservations?adminId=${adminId}&status=${resFilterStatus}&stationId=${resFilterStation}&search=${searchQuery}`);
         const data = await res.json();
         if (data.success) setReservations(data.data);
+    };
+
+    const fetchSuggestions = async (search) => {
+        if (!search) {
+            setSuggestions([]);
+            return;
+        }
+        try {
+            const res = await fetch(`${API_URL}/reservations/suggestions?search=${search}&adminId=all`);
+            const data = await res.json();
+            if (data.success) setSuggestions(data.data);
+        } catch (error) {
+            console.error("Error fetching suggestions:", error);
+        }
     };
 
     const fetchPayments = async (adminId) => {
@@ -112,7 +129,14 @@ const AdminDashboard = () => {
     // Auto-refresh reservations when filters change
     useEffect(() => {
         if (admin) fetchReservations('all');
-    }, [resFilterStatus, resFilterStation]);
+    }, [resFilterStatus, resFilterStation, searchQuery]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchQuery) fetchSuggestions(searchQuery);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     if (!admin) return null;
 
@@ -158,6 +182,66 @@ const AdminDashboard = () => {
 
                 {/* Filters */}
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+
+                    {/* Search with Suggestions */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Search Reservations</label>
+                        <input
+                            type="text"
+                            placeholder="Search by user or station..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setShowSuggestions(true);
+                            }}
+                            onFocus={() => setShowSuggestions(true)}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            style={{
+                                padding: '10px',
+                                borderRadius: '8px',
+                                background: 'var(--bg-card)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                color: 'white',
+                                width: '300px'
+                            }}
+                        />
+                        {showSuggestions && suggestions.length > 0 && (
+                            <div className="card" style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                width: '100%',
+                                zIndex: 10,
+                                padding: '8px 0',
+                                marginTop: '4px',
+                                maxHeight: '200px',
+                                overflowY: 'auto'
+                            }}>
+                                {suggestions.map((s, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => {
+                                            setSearchQuery(s.suggestion);
+                                            setShowSuggestions(false);
+                                        }}
+                                        style={{
+                                            padding: '8px 16px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            fontSize: '0.9rem'
+                                        }}
+                                        className="suggestion-item"
+                                    >
+                                        <span>{s.suggestion}</span>
+                                        <span style={{ fontSize: '0.7rem', opacity: 0.5, background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{s.type}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Filter by Status</label>
                         <select
@@ -182,8 +266,8 @@ const AdminDashboard = () => {
                             {myStations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
-                    <button className="btn-secondary" onClick={() => { setResFilterStatus('All statuses'); setResFilterStation('all'); }} style={{ padding: '10px 20px', height: '42px' }}>Clear Filters</button>
-                    <button className="btn-secondary" onClick={() => fetchReservations(admin.id)} style={{ padding: '10px 20px', height: '42px' }}><RefreshCw size={16} /> Refresh</button>
+                    <button className="btn-secondary" onClick={() => { setResFilterStatus('All statuses'); setResFilterStation('all'); setSearchQuery(''); }} style={{ padding: '10px 20px', height: '42px' }}>Clear Filters</button>
+                    <button className="btn-secondary" onClick={() => fetchReservations('all')} style={{ padding: '10px 20px', height: '42px' }}><RefreshCw size={16} /> Refresh</button>
                 </div>
 
                 {/* Table */}

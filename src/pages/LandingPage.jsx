@@ -1,108 +1,239 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, BatteryCharging, ShieldCheck, Zap, Star } from 'lucide-react';
+import {
+    MapPin,
+    BatteryCharging,
+    ShieldCheck,
+    Zap,
+    Star,
+    ChevronRight,
+    Smartphone,
+    Leaf,
+    Globe,
+    CheckCircle2,
+    Users
+} from 'lucide-react';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
+    // Scroll reveal logic
+    useEffect(() => {
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        return () => observer.disconnect();
+    }, []);
+
     return (
         <div className="landing-page">
+            {/* Hero Section */}
             <section className="hero">
                 <div className="container hero-content">
                     <h1 className="hero-title">
-                        Power Your Journey <br />
-                        <span className="text-highlight">Anywhere, Anytime.</span>
+                        Charge Into The <br />
+                        <span className="text-highlight">Sustainable Future.</span>
                     </h1>
                     <p className="hero-subtitle">
-                        The smartest EV charging network in Thailand. Find stations, book slots, and pay seamlessly with our award-winning platform.
+                        Thailand's most advanced EV ecosystem. Real-time availability, autonomous reservations, and hyper-fast charging infrastructure.
                     </p>
                     <div className="hero-actions">
                         <Link to={localStorage.getItem('user') ? "/user/search" : "/login"} className="btn-primary btn-lg">
-                            Find a Station
+                            Get Started <ChevronRight size={18} />
                         </Link>
                         <Link to="/register" className="btn-secondary btn-lg">
-                            Join as Partner
+                            Partner With Us
                         </Link>
                     </div>
                 </div>
             </section>
 
-            <section className="stats-section container">
+            {/* Stats Trust Bar */}
+            <section className="stats-section container reveal">
                 <div className="stat-card">
                     <h2>1,200+</h2>
-                    <p>Stations Nationwide</p>
+                    <p>Stations</p>
                 </div>
                 <div className="stat-card">
-                    <h2>50k+</h2>
-                    <p>Happy Drivers</p>
+                    <h2>50M+</h2>
+                    <p>kWh Delivered</p>
                 </div>
                 <div className="stat-card">
                     <h2>99.9%</h2>
-                    <p>System Uptime</p>
+                    <p>Uptime</p>
                 </div>
                 <div className="stat-card">
                     <h2>24/7</h2>
-                    <p>Expert Support</p>
+                    <p>Support</p>
                 </div>
             </section>
 
-            <section className="features container">
-                <div className="feature-card">
-                    <MapPin className="feature-icon" color="var(--primary)" size={40} />
-                    <h3>Smart Map</h3>
-                    <p>Real-time availability of charging stations near you with precise GPS tracking.</p>
+            {/* How It Works */}
+            <section className="how-it-works container">
+                <div className="text-center reveal">
+                    <h2 className="section-title">Seamless Experience</h2>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
+                        Designed for the elite EV owner. Three steps to a full battery.
+                    </p>
                 </div>
-                <div className="feature-card">
-                    <BatteryCharging className="feature-icon" color="var(--secondary)" size={40} />
-                    <h3>Fast Charging</h3>
-                    <p>Filter by 50kW, 120kW, or superchargers. We support all major connector types.</p>
-                </div>
-                <div className="feature-card">
-                    <ShieldCheck className="feature-icon" color="#ffb700" size={40} />
-                    <h3>Secure Payment</h3>
-                    <p>Certified secure transactions with automatic invoicing and usage history.</p>
-                </div>
-            </section>
-
-            <section className="trust-section container">
-                <h3 className="trust-title">TRUSTED BY LEADING BRANDS</h3>
-                <div className="partners-grid">
-                    <Zap size={40} /> {/* Placeholder for Brand 1 */}
-                    <Zap size={40} /> {/* Placeholder for Brand 2 */}
-                    <Zap size={40} /> {/* Placeholder for Brand 3 */}
-                    <Zap size={40} /> {/* Placeholder for Brand 4 */}
-                    <Zap size={40} /> {/* Placeholder for Brand 5 */}
-                </div>
-            </section>
-
-            <section className="testimonials container">
-                <h2 className="section-title">What Our Drivers Say</h2>
-                <div className="testimonial-grid">
-                    <div className="testimonial-card">
-                        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-                            {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="#ffb700" color="#ffb700" />)}
-                        </div>
-                        <p className="testimonial-text">"The reservation feature is a lifesaver. No more waiting in line at the mall. Highly recommended for every EV owner in Bangkok!"</p>
-                        <div className="testimonial-author">
-                            <div className="author-info">
-                                <h4>Somchai PK.</h4>
-                                <p>Tesla Model 3 Owner</p>
-                            </div>
-                        </div>
+                <div className="steps-container">
+                    <div className="step-card reveal">
+                        <div className="step-number">1</div>
+                        <MapPin className="feature-icon" color="var(--primary)" size={32} />
+                        <h3>Find & Filter</h3>
+                        <p>Locate the perfect station by connector type, speed, and real-time availability.</p>
                     </div>
-                    <div className="testimonial-card">
-                        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-                            {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="#ffb700" color="#ffb700" />)}
-                        </div>
-                        <p className="testimonial-text">"Best EV app in Thailand. The interface is so clean and finding a fast charger is much easier now. 5 stars!"</p>
-                        <div className="testimonial-author">
-                            <div className="author-info">
-                                <h4>Jane Wilson</h4>
-                                <p>BYD Atto 3 Driver</p>
-                            </div>
-                        </div>
+                    <div className="step-card reveal" style={{ transitionDelay: '0.2s' }}>
+                        <div className="step-number">2</div>
+                        <Smartphone className="feature-icon" color="var(--secondary)" size={32} />
+                        <h3>One-Tap Reserve</h3>
+                        <p>Secure your spot up to 24 hours in advance. No more waiting in queues.</p>
+                    </div>
+                    <div className="step-card reveal" style={{ transitionDelay: '0.4s' }}>
+                        <div className="step-number">3</div>
+                        <Zap className="feature-icon" color="#ffb700" size={32} />
+                        <h3>Fast Charge</h3>
+                        <p>Plug in and pay automatically. Most vehicles reach 80% in under 20 minutes.</p>
                     </div>
                 </div>
             </section>
 
+            {/* Impact Section */}
+            <section className="impact-section container reveal">
+                <Leaf color="var(--secondary)" size={48} style={{ marginBottom: '24px' }} />
+                <h2 className="section-title">Our Environmental Impact</h2>
+                <div className="impact-grid">
+                    <div className="impact-item">
+                        <h2>450k</h2>
+                        <p>Metric Tons of CO2 Saved</p>
+                    </div>
+                    <div className="impact-item">
+                        <h2>12M+</h2>
+                        <p>Clean Miles Driven</p>
+                    </div>
+                    <div className="impact-item">
+                        <h2>$8M+</h2>
+                        <p>Fuel Costs Saved</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Detail */}
+            <section className="features container reveal">
+                <div className="feature-card">
+                    <Globe className="feature-icon" color="var(--primary)" size={40} />
+                    <h3>Global Protocol</h3>
+                    <p>Adhering to international safety and connectivity standards for universal compatibility.</p>
+                </div>
+                <div className="feature-card">
+                    <ShieldCheck className="feature-icon" color="var(--secondary)" size={40} />
+                    <h3>Enterprise Security</h3>
+                    <p>Military-grade encryption for all financial transactions and vehicle data.</p>
+                </div>
+                <div className="feature-card">
+                    <Users className="feature-icon" color="#ffb700" size={40} />
+                    <h3>Fleet Management</h3>
+                    <p>Dedicated tools for logistics and ride-sharing companies to manage their electric fleets.</p>
+                </div>
+            </section>
+
+            {/* Pricing Section */}
+            <section className="pricing-section container reveal">
+                <div className="text-center">
+                    <h2 className="section-title">Designed for Every Driver</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Choose the plan that fits your lifestyle.</p>
+                </div>
+                <div className="pricing-grid">
+                    <div className="pricing-card">
+                        <h4>Essential</h4>
+                        <div className="price">Free <span>/mo</span></div>
+                        <ul className="pricing-features">
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Pay-as-you-go charging</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Basic map features</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Email support</li>
+                        </ul>
+                        <button className="btn-secondary w-full" style={{ width: '100%' }}>Select Plan</button>
+                    </div>
+                    <div className="pricing-card popular">
+                        <div className="popular-tag">MOST POPULAR</div>
+                        <h4>Performance</h4>
+                        <div className="price">$19 <span>/mo</span></div>
+                        <ul className="pricing-features">
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> 15% discount on kWh</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Instant reservations</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Priority 24/7 support</li>
+                        </ul>
+                        <button className="btn-primary w-full" style={{ width: '100%' }}>Get Performance</button>
+                    </div>
+                    <div className="pricing-card">
+                        <h4>Enterprise</h4>
+                        <div className="price">$99 <span>/mo</span></div>
+                        <ul className="pricing-features">
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Fleet analytics dashboard</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Bulk kWh pricing</li>
+                            <li><CheckCircle2 size={16} color="var(--secondary)" /> Dedicated account manager</li>
+                        </ul>
+                        <button className="btn-secondary w-full" style={{ width: '100%' }}>Contact Sales</button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Trusted Brands - Infinite Scroll */}
+            <section className="trust-section reveal">
+                <div className="container">
+                    <h3 className="trust-title">PARTNERING WITH THE BEST</h3>
+                </div>
+                <div className="partners-scroll-container">
+                    <div className="partners-scroll">
+                        <span className="partner-logo">TESLA</span>
+                        <span className="partner-logo">BMW</span>
+                        <span className="partner-logo">MERCEDES-BENZ</span>
+                        <span className="partner-logo">AUDI</span>
+                        <span className="partner-logo">PORSCHE</span>
+                        <span className="partner-logo">HYUNDAI</span>
+                        <span className="partner-logo">KIA</span>
+                        <span className="partner-logo">VOLKSWAGEN</span>
+                        <span className="partner-logo">RIVIAN</span>
+                        <span className="partner-logo">BYD</span>
+                        <span className="partner-logo">PORCHE</span>
+                        <span className="partner-logo">NISSAN</span>
+                        {/* Duplicate for seamless loop */}
+                        <span className="partner-logo">TESLA</span>
+                        <span className="partner-logo">BMW</span>
+                        <span className="partner-logo">MERCEDES-BENZ</span>
+                        <span className="partner-logo">AUDI</span>
+                        <span className="partner-logo">PORSCHE</span>
+                        <span className="partner-logo">HYUNDAI</span>
+                        <span className="partner-logo">KIA</span>
+                        <span className="partner-logo">VOLKSWAGEN</span>
+                        <span className="partner-logo">RIVIAN</span>
+                        <span className="partner-logo">BYD</span>
+                        <span className="partner-logo">PORCHE</span>
+                        <span className="partner-logo">NISSAN</span>
+                    </div>
+                </div>
+            </section>
+
+            {/* Removed Newsletter Section */}
+            <section className="newsletter container reveal" style={{ display: 'none' }}>
+                <h2>Stay in the Loop</h2>
+                <p style={{ color: 'var(--text-muted)' }}>Get the latest updates on new charging stations and EV news.</p>
+                <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+                    <input type="email" placeholder="Enter your email" required />
+                    <button type="submit" className="btn-primary">Subscribe</button>
+                </form>
+            </section>
+
+            {/* Footer */}
             <footer className="footer">
                 <div className="container footer-content">
                     <div className="footer-main">
@@ -110,35 +241,42 @@ const LandingPage = () => {
                             <Zap size={32} color="var(--primary)" />
                             <span>EV Charge</span>
                         </div>
-                        <p className="footer-desc">Building the future of sustainable transportation in Southeast Asia since 2024.</p>
+                        <p className="footer-desc">Redefining the energy grid. Join the revolution towards a zero-emission future.</p>
                     </div>
                     <div className="footer-links">
                         <h4>Platform</h4>
                         <ul>
                             <li><Link to="/user/search">Search Map</Link></li>
                             <li><Link to="/stations">Station List</Link></li>
-                            <li><Link to="/pricing">Pricing Plans</Link></li>
+                            <li><Link to="/pricing">In-App Wallet</Link></li>
+                        </ul>
+                    </div>
+                    <div className="footer-links">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Developer API</a></li>
+                            <li><a href="#">Station Installation</a></li>
+                            <li><a href="#">Sustainability Report</a></li>
                         </ul>
                     </div>
                     <div className="footer-links">
                         <h4>Company</h4>
                         <ul>
-                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Press Kit</a></li>
+                            <li><a href="#">Investor Relations</a></li>
                             <li><a href="#">Careers</a></li>
-                            <li><a href="#">Partners</a></li>
-                        </ul>
-                    </div>
-                    <div className="footer-links">
-                        <h4>Support</h4>
-                        <ul>
-                            <li><a href="#">Help Center</a></li>
-                            <li><a href="#">Contact Us</a></li>
-                            <li><a href="#">Privacy Policy</a></li>
                         </ul>
                     </div>
                 </div>
-                <div className="footer-bottom">
-                    <p>&copy; 2026 EV Charge Network. All rights reserved.</p>
+                <div className="container footer-bottom">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+                        <p>&copy; 2026 EV Charge Network. All rights reserved.</p>
+                        <div style={{ display: 'flex', gap: '24px' }}>
+                            <a href="#" style={{ color: 'white', opacity: 0.5 }}>Twitter</a>
+                            <a href="#" style={{ color: 'white', opacity: 0.5 }}>LinkedIn</a>
+                            <a href="#" style={{ color: 'white', opacity: 0.5 }}>Instagram</a>
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>

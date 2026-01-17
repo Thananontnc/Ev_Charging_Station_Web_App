@@ -356,7 +356,7 @@ app.get('/api/admin/stats', async (req, res) => {
 // GET Admin Reservations (with filters)
 app.get('/api/admin/reservations', async (req, res) => {
     try {
-        const { adminId, status, stationId } = req.query;
+        const { adminId, status, stationId, search } = req.query;
         if (!adminId) return res.status(400).json({ success: false, error: 'Admin ID required' });
 
         let queryText = `
@@ -375,29 +375,70 @@ app.get('/api/admin/reservations', async (req, res) => {
             JOIN charging_stations cs ON r.station_id = cs.station_id
         `;
         const queryParams = [];
+        let whereClause = '';
+
         if (adminId !== 'all') {
-            queryText += ` WHERE cs.admin_id = $1`;
             queryParams.push(adminId);
+            whereClause = ` WHERE cs.admin_id = $${queryParams.length}`;
         } else {
-            queryText += ` WHERE 1=1`;
+            whereClause = ` WHERE 1=1`;
         }
 
         if (status && status !== 'All statuses') {
             queryParams.push(status);
-            queryText += ` AND r.status = $${queryParams.length}`;
+            whereClause += ` AND r.status = $${queryParams.length}`;
         }
 
         if (stationId && stationId !== 'Select a station' && stationId !== 'all') {
             queryParams.push(stationId);
-            queryText += ` AND r.station_id = $${queryParams.length}`;
+            whereClause += ` AND r.station_id = $${queryParams.length}`;
         }
 
-        queryText += ` ORDER BY r.start_time DESC`;
+        if (search) {
+            queryParams.push(`%${search}%`);
+            whereClause += ` AND (c.name ILIKE $${queryParams.length} OR cs.station_name ILIKE $${queryParams.length})`;
+        }
+
+        queryText += whereClause + ` ORDER BY r.start_time DESC`;
 
         const result = await pool.query(queryText, queryParams);
         res.json({ success: true, data: result.rows });
     } catch (error) {
         console.error('Error fetching admin reservations:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET Search Suggestions for Reservations
+app.get('/api/admin/reservations/suggestions', async (req, res) => {
+    try {
+        const { search, adminId } = req.query;
+        if (!search) return res.json({ success: true, data: [] });
+
+        const queryParams = [`%${search}%`];
+        let adminFilter = '';
+        if (adminId && adminId !== 'all') {
+            queryParams.push(adminId);
+            adminFilter = ` AND cs.admin_id = $2`;
+        }
+
+        const query = `
+            (SELECT DISTINCT c.name as suggestion, 'User' as type
+             FROM reservations r
+             JOIN customers c ON r.customer_id = c.customer_id
+             JOIN charging_stations cs ON r.station_id = cs.station_id
+             WHERE c.name ILIKE $1 ${adminFilter})
+            UNION
+            (SELECT DISTINCT cs.station_name as suggestion, 'Station' as type
+             FROM reservations r
+             JOIN charging_stations cs ON r.station_id = cs.station_id
+             WHERE cs.station_name ILIKE $1 ${adminFilter})
+            LIMIT 10
+        `;
+
+        const result = await pool.query(query, queryParams);
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
