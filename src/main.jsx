@@ -7,7 +7,7 @@ import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter basename="/Ev_Charging_Station_Web_App">
+    <BrowserRouter basename={import.meta.env.DEV ? '/' : (import.meta.env.VITE_BASENAME || '/')}>
       <App />
     </BrowserRouter>
   </StrictMode>,
