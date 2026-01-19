@@ -17,10 +17,11 @@ services:
         value: 18
 
   # 2. Frontend Service (Static Site)
-  - type: static
+  - type: web
     name: ev-charging-frontend
+    runtime: static
     buildCommand: npm run build
-    publishDir: dist
+    staticPublishDir: dist
     envVars:
       - key: VITE_API_URL
         fromService:
