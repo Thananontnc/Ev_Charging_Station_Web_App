@@ -21,7 +21,7 @@ services:
     name: ev-charging-frontend
     runtime: static
     buildCommand: npm run build
-    staticPublishDir: dist
+    publishDir: dist
     envVars:
       - key: VITE_API_URL
         fromService:
