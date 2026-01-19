@@ -1,16 +1,14 @@
-services:
-  # 1. Managed PostgreSQL Database
-  - type: postgres
-    name: ev-charging-db
+databases:
+  - name: ev-charging-db
     databaseName: ev_charging_db
     user: thananonchounudom
-    region: singapore # Choose the region closest to you
-    plan: free # Use 'free' for testing, 'standard' for production
+    region: singapore
+    plan: free
 
-  # 2. Web Service (Backend + Frontend)
+services:
   - type: web
     name: ev-charging-web-app
-    env: node
+    runtime: node
     region: singapore
     plan: free
     buildCommand: npm install && npm run build && cd server && npm install
@@ -21,9 +19,6 @@ services:
           name: ev-charging-db
           property: connectionString
       - key: NODE_VERSION
-        value: 18 # Specify Node.js version
+        value: 18
       - key: PORT
         value: 5001
- 
-
- 
