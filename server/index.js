@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { Pool } = require('pg');
-
-dotenv.config();
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -11,6 +10,9 @@ const PORT = process.env.PORT || 5001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app dist folder
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Database Connection
 const pool = new Pool({
@@ -750,9 +752,15 @@ app.put('/api/reservations/:id/cancel', async (req, res) => {
     }
 });
 
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 // Start Server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 API Endpoints:`);
     console.log(`   GET  /api/stations - Get all stations`);
     console.log(`   GET  /api/stations/:id - Get single station`);
