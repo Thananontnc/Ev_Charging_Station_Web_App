@@ -17,9 +17,8 @@ services:
         value: 18
 
   # 2. Frontend Service (Static Site)
-  - type: web
+  - type: static_site
     name: ev-charging-frontend
-    env: static
     buildCommand: npm run build
     publishDir: dist
     envVars:
