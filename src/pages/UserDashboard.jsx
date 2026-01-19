@@ -5,6 +5,8 @@ import MapComponent from '../components/MapComponent';
 import ReservationModal from '../components/ReservationModal';
 import '../styles/Dashboard.css';
 
+import API_BASE_URL from '../apiConfig';
+
 const UserDashboard = () => {
     const [activeTab, setActiveTab] = useState('search');
     const [userLocation, setUserLocation] = useState(null);
@@ -31,9 +33,7 @@ const UserDashboard = () => {
         }
     }, [navigate]);
 
-    const API_URL = 'http://localhost:5001/api';
-
-    // Fetch stations from backend whenever filters change
+    const API_URL = API_BASE_URL;
     useEffect(() => {
         fetchStations();
     }, [searchQuery, selectedType, availabilityOnly]);

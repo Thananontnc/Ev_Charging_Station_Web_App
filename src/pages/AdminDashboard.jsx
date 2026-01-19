@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import '../styles/Dashboard.css';
 import PaymentDetailModal from '../components/PaymentDetailModal';
+import API_BASE_URL from '../apiConfig';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -40,7 +41,7 @@ const AdminDashboard = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const API_URL = 'http://localhost:5001/api/admin';
+    const API_URL = `${API_BASE_URL}/admin`;
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
     const handleUpdateStatus = async (id, newStatus) => {
         if (!window.confirm(`Are you sure you want to mark this reservation as ${newStatus}?`)) return;
         try {
-            const res = await fetch(`http://localhost:5001/api/admin/reservations/${id}/status`, {
+            const res = await fetch(`${API_BASE_URL}/admin/reservations/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })

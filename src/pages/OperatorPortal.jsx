@@ -12,6 +12,7 @@ import {
     Activity
 } from 'lucide-react';
 import StationModal from '../components/StationModal';
+import API_BASE_URL from '../apiConfig';
 import '../styles/Dashboard.css';
 
 const OperatorPortal = () => {
@@ -28,7 +29,7 @@ const OperatorPortal = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingStation, setEditingStation] = useState(null);
 
-    const API_URL = 'http://localhost:5001/api/operator';
+    const API_URL = `${API_BASE_URL}/operator`;
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -62,7 +63,7 @@ const OperatorPortal = () => {
 
     const fetchStats = async (adminId) => {
         // We reuse the admin stats endpoint as it has what we need
-        const res = await fetch(`http://localhost:5001/api/admin/stats?adminId=${adminId}`);
+        const res = await fetch(`${API_BASE_URL}/admin/stats?adminId=${adminId}`);
         const data = await res.json();
         if (data.success) {
             setStats({

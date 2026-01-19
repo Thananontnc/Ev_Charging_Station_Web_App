@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Check, RotateCcw, AlertCircle } from 'lucide-react';
+import API_BASE_URL from '../apiConfig';
 
 const PaymentDetailModal = ({ paymentId, onClose, onRefresh }) => {
     const [payment, setPayment] = useState(null);
@@ -7,7 +8,7 @@ const PaymentDetailModal = ({ paymentId, onClose, onRefresh }) => {
     const [updating, setUpdating] = useState(false);
     const [newStatus, setNewStatus] = useState('');
 
-    const API_URL = 'http://localhost:5001/api/admin/payments';
+    const API_URL = `${API_BASE_URL}/admin/payments`;
 
     useEffect(() => {
         fetchPaymentDetails();
