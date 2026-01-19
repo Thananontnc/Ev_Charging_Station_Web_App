@@ -20,6 +20,6 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: npm_config_production
-        value: false # This tells npm to install devDependencies regardless of NODE_ENV
+        value: false
       - key: NODE_ENV
         value: production
