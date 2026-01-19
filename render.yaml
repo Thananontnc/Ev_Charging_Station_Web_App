@@ -10,9 +10,9 @@ services:
     runtime: node
     region: singapore
     plan: free
-    # Updated: Added 'node server/setupDb.js' to the build command so the database resets to a clean state with seed data on every deploy.
-    buildCommand: "npm install && npm run build && cd server && npm install && node setupDb.js"
-    startCommand: "cd server && node index.js"
+    buildCommand: "npm install && npm run build && cd server && npm install"
+    # Moved setupDb.js to startCommand to guarantee it runs on the actual production instance
+    startCommand: "cd server && node setupDb.js && node index.js"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
