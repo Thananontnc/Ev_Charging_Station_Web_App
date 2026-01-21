@@ -646,6 +646,15 @@
     max-width: 600px;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    max-height: 90vh;
+    /* Prevent modal from exceeding screen height */
+    display: flex;
+    flex-direction: column;
+}
+
+.reservation-form {
+    overflow-y: auto;
+    /* Enable scrolling for form content */
 }
 
 .payment-detail-grid {
