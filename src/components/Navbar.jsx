@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Zap, User, MapPin, Shield, LogOut } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
 
     // Sync user state when location changes (in case of login/logout)
@@ -15,7 +16,7 @@ const Navbar = () => {
     const handleLogout = () => {
         localStorage.removeItem('user');
         setUser(null);
-        window.location.href = '/Ev_Charging_Station_Web_App/';
+        navigate('/');
     };
 
     return (
